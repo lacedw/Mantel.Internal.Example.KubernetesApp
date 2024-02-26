@@ -1,0 +1,6 @@
+@Mantel.Internal.Example.KubernetesApp_HostAddress = http://localhost:5137
+
+GET {{Mantel.Internal.Example.KubernetesApp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
