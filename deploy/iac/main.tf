@@ -40,6 +40,7 @@ resource "null_resource" "docker_build" {
   depends_on = [module.container_registry]
   provisioner "local-exec" {
     command = <<-EOT
+      az login --service-principal -u ${var.sp_client_id} -p ${var.sp_client_secret} --tenant ${var.sp_tenant_id}
       TOKEN=$(az acr login --name ${module.container_registry.registry_name} --expose-token --output tsv --query accessToken)
       docker login ${module.container_registry.registry_name}.azurecr.io --username 00000000-0000-0000-0000-000000000000 --password-stdin <<< $TOKEN
       docker build -t ${module.container_registry.registry_name}.azurecr.io/${local.repository_name}:${local.image_tag} -f ../../Mantel.Internal.Example.KubernetesApp/Dockerfile ../../
