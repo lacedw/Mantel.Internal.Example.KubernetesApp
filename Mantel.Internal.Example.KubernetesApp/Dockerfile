@@ -4,18 +4,19 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
+ARG TARGETARCH
 WORKDIR /src
 COPY ["Mantel.Internal.Example.KubernetesApp/Mantel.Internal.Example.KubernetesApp.csproj", "Mantel.Internal.Example.KubernetesApp/"]
-RUN dotnet restore "Mantel.Internal.Example.KubernetesApp/Mantel.Internal.Example.KubernetesApp.csproj"
+RUN dotnet restore "Mantel.Internal.Example.KubernetesApp/Mantel.Internal.Example.KubernetesApp.csproj" -a $TARGETARCH
 COPY . .
 WORKDIR "/src/Mantel.Internal.Example.KubernetesApp"
 RUN dotnet build "Mantel.Internal.Example.KubernetesApp.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "Mantel.Internal.Example.KubernetesApp.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Mantel.Internal.Example.KubernetesApp.csproj" -a $TARGETARCH --no-restore -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app

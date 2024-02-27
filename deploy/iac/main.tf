@@ -26,30 +26,36 @@ module "cluster" {
 # Create the ACR & Assign Role to AKS Cluster.
 module "container_registry" {
   source = "./container_registry"
-  cluster_principal_id = module.cluster.principal_id
+  cluster_user_assigned_identity_principal_id = module.cluster.user_assigned_identity_principal_id
+  cluster_system_assigned_identity_principal_id = module.cluster.system_assigned_identity_principal_id
+  kubelet_identity_object_id = module.cluster.kubelet_identity_object_id
   rg_name = azurerm_resource_group.rg.name
   rg_location = azurerm_resource_group.rg.location
 }
 
 locals {
   repository_name = "weather-forecast"
-  image_tag = "0.1.0"
+  image_tag = "0.1.11"
 }
 
 resource "null_resource" "docker_build" {
   depends_on = [module.container_registry]
+  triggers = {
+    image_tag = local.image_tag
+    repository_name = local.repository_name
+  }
   provisioner "local-exec" {
     command = <<-EOT
       az login --service-principal -u ${var.sp_client_id} -p ${var.sp_client_secret} --tenant ${var.sp_tenant_id}
       TOKEN=$(az acr login --name ${module.container_registry.registry_name} --expose-token --output tsv --query accessToken)
       docker login ${module.container_registry.registry_name}.azurecr.io --username 00000000-0000-0000-0000-000000000000 --password-stdin <<< $TOKEN
-      docker build -t ${module.container_registry.registry_name}.azurecr.io/${local.repository_name}:${local.image_tag} -f ../../Mantel.Internal.Example.KubernetesApp/Dockerfile ../../
+      docker build -t ${module.container_registry.registry_name}.azurecr.io/${local.repository_name}:${local.image_tag} -f ../../Mantel.Internal.Example.KubernetesApp/Dockerfile --no-cache --platform linux/amd64 ../../
       docker push ${module.container_registry.registry_name}.azurecr.io/${local.repository_name}:${local.image_tag}
     EOT
   }
 }
 
-# Create the HELM Release.
+# Install the Application on the Kubernetes Cluster via HELM.
 resource "helm_release" "weather_forecast" {
   name       = "main"
   repository = "../charts"
@@ -62,5 +68,9 @@ resource "helm_release" "weather_forecast" {
   set {
     name = "image.tag"
     value = local.image_tag
+  }
+  set {
+    name = "service.port"
+    value = 80
   }
 }

@@ -1,5 +1,13 @@
-output "principal_id" {
+output "system_assigned_identity_principal_id" {
   value = azurerm_kubernetes_cluster.aks.identity[0].principal_id
+}
+
+output "user_assigned_identity_principal_id" {
+  value = azurerm_user_assigned_identity.azurerm_kubernetes_cluster_user_assigned_identity.principal_id
+}
+
+output "kubelet_identity_object_id" {
+  value = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
 }
 
 output "cluster_name" {

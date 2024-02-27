@@ -10,10 +10,24 @@ resource "azurerm_container_registry" "acr" {
 }
 
 /*
-resource "azurerm_role_assignment" "aks_acr_role_assignment" {
-  principal_id                     = var.cluster_principal_id
+resource "azurerm_role_assignment" "aks_acr_system_assigned_identity_role_assignment" {
+  principal_id                     = var.cluster_system_assigned_identity_principal_id
   role_definition_name             = "AcrPull"
   scope                            = azurerm_container_registry.acr.id
   skip_service_principal_aad_check = true
 }
 */
+
+resource "azurerm_role_assignment" "aks_acr_user_assigned_identity_role_assignment" {
+  principal_id                     = var.cluster_user_assigned_identity_principal_id
+  role_definition_name             = "AcrPull"
+  scope                            = azurerm_container_registry.acr.id
+  skip_service_principal_aad_check = true
+}
+
+resource "azurerm_role_assignment" "aks_acr_kubelet_identity_role_assignment" {
+  principal_id                     = var.kubelet_identity_object_id
+  role_definition_name             = "AcrPull"
+  scope                            = azurerm_container_registry.acr.id
+  skip_service_principal_aad_check = true
+}
